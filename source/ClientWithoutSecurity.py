@@ -70,7 +70,7 @@ def main(args):
         print("Closing connection...")
 
     end_time = time.time()
-    print(f"Program took {(end_time - start_time) / 100000}ms to run.")
+    print(f"Program took {end_time - start_time}s to run.")
 
 
 if __name__ == "__main__":
