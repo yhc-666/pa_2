@@ -29,8 +29,8 @@ def convert_bytes_to_int(xbytes):
 
 
 def main(args):
-    server_address = args[1] if len(args) > 0 else "localhost"
-    port = args[2] if len(args) > 1 else 4321
+    port = int(args[0]) if len(args) > 0 else 4321
+    server_address = args[1] if len(args) > 1 else "localhost"
 
     start_time = time.time()
 
