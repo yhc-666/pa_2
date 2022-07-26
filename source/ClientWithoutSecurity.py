@@ -42,10 +42,12 @@ def main(args):
         print("Connected")
 
         while True:
-            filename = input("Enter a filename to send (enter -1 to exit):")
+            filename = input(
+                "Enter a filename to send (enter -1 to exit):"
+            ).strip()
 
             while filename != "-1" and (not pathlib.Path(filename).is_file()):
-                filename = input("Invalid filename. Please try again:")
+                filename = input("Invalid filename. Please try again:").strip()
 
             if filename == "-1":
                 s.sendall(convert_int_to_bytes(2))
