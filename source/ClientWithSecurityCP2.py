@@ -126,64 +126,64 @@ def main(args):
             print("Authentication failed, close connection")
 
         # If check is successful, we can continue doing the symmetric key encryption
-        else:
-            # use Fernet to generate session key
-            session_key_bytes = Fernet.generate_key()
-            session_key = Fernet(session_key_bytes)
-            s.sendall(convert_int_to_bytes(4))
 
-            # using serve's public key to encrypt the session key
-            encrypted_session_key_bytes = server_public_key.encrypt(
-                session_key_bytes,
-                padding.OAEP(
-                    mgf=padding.MGF1(hashes.SHA256()),
-                    algorithm=hashes.SHA256(),
-                    label=None,
-                ),
-            )
-            # send encrypted session key and its size to server
-            s.sendall(convert_int_to_bytes(len(encrypted_session_key_bytes)))
-            s.sendall(encrypted_session_key_bytes)
+        # use Fernet to generate session key
+        session_key_bytes = Fernet.generate_key()
+        session_key = Fernet(session_key_bytes)
+        s.sendall(convert_int_to_bytes(4))
 
-            while verified_state:
-                filename = input(
-                    "Enter a filename to send (enter -1 to exit):"
-                ).strip()
+        # using serve's public key to encrypt the session key
+        encrypted_session_key_bytes = server_public_key.encrypt(
+            session_key_bytes,
+            padding.OAEP(
+                mgf=padding.MGF1(hashes.SHA256()),
+                algorithm=hashes.SHA256(),
+                label=None,
+            ),
+        )
+        # send encrypted session key and its size to server
+        s.sendall(convert_int_to_bytes(len(encrypted_session_key_bytes)))
+        s.sendall(encrypted_session_key_bytes)
 
-                while filename != "-1" and (not pathlib.Path(filename).is_file()):
-                    filename = input("Invalid filename. Please try again:").strip()
+        while verified_state:
+            filename = input(
+                "Enter a filename to send (enter -1 to exit):"
+            ).strip()
 
-                if filename == "-1":
-                    s.sendall(convert_int_to_bytes(2))
-                    break
+            while filename != "-1" and (not pathlib.Path(filename).is_file()):
+                filename = input("Invalid filename. Please try again:").strip()
 
-                filename_bytes = bytes(filename, encoding="utf8")
+            if filename == "-1":
+                s.sendall(convert_int_to_bytes(2))
+                break
 
-                # Send the filename
-                s.sendall(convert_int_to_bytes(0))
-                s.sendall(convert_int_to_bytes(len(filename_bytes)))
-                s.sendall(filename_bytes)
+            filename_bytes = bytes(filename, encoding="utf8")
 
-                # Send the file
-                s.sendall(convert_int_to_bytes(1))
-                with open(filename, mode="rb") as fp:
-                    data = fp.read()
-                    # encryption here
-                    encrypted_file = session_key.encrypt(
-                        data,
-                    )
+            # Send the filename
+            s.sendall(convert_int_to_bytes(0))
+            s.sendall(convert_int_to_bytes(len(filename_bytes)))
+            s.sendall(filename_bytes)
 
-                    s.sendall(convert_int_to_bytes(len(encrypted_file)))
-                    s.sendall(encrypted_file)
-
-                filename = "enc_" + filename.split("/")[-1]
-                with open(
-                        f"send_files_enc/{filename}", mode="wb"
-                ) as fp:
-                    fp.write(encrypted_file)
-                print(
-                    "Saved before sent."
+            # Send the file
+            s.sendall(convert_int_to_bytes(1))
+            with open(filename, mode="rb") as fp:
+                data = fp.read()
+                # encryption here
+                encrypted_file = session_key.encrypt(
+                    data,
                 )
+
+                s.sendall(convert_int_to_bytes(len(encrypted_file)))
+                s.sendall(encrypted_file)
+
+            filename = "enc_" + filename.split("/")[-1]
+            with open(
+                    f"send_files_enc/{filename}", mode="wb"
+            ) as fp:
+                fp.write(encrypted_file)
+            print(
+                "Saved before sent."
+            )
 
         # Close the connection
         s.sendall(convert_int_to_bytes(2))

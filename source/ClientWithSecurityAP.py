@@ -126,32 +126,32 @@ def main(args):
             print("Authentication failed, close connection")
 
         # If check is successful, the regular non-secure FTP should proceed
-        else:
-            while verified_state:
-                filename = input(
-                    "Enter a filename to send (enter -1 to exit):"
-                ).strip()
+        while verified_state:
+            filename = input(
+                "Enter a filename to send (enter -1 to exit):"
+            ).strip()
 
-                while filename != "-1" and (not pathlib.Path(filename).is_file()):
-                    filename = input("Invalid filename. Please try again:").strip()
+            while filename != "-1" and (not pathlib.Path(filename).is_file()):
+                filename = input("Invalid filename. Please try again:").strip()
 
-                if filename == "-1":
-                    s.sendall(convert_int_to_bytes(2))
-                    break
+            if filename == "-1":
+                s.sendall(convert_int_to_bytes(2))
+                break
 
-                filename_bytes = bytes(filename, encoding="utf8")
+            filename_bytes = bytes(filename, encoding="utf8")
 
-                # Send the filename
-                s.sendall(convert_int_to_bytes(0))
-                s.sendall(convert_int_to_bytes(len(filename_bytes)))
-                s.sendall(filename_bytes)
+            # Send the filename
+            s.sendall(convert_int_to_bytes(0))
+            s.sendall(convert_int_to_bytes(len(filename_bytes)))
+            s.sendall(filename_bytes)
 
-                # Send the file
-                with open(filename, mode="rb") as fp:
-                    data = fp.read()
-                    s.sendall(convert_int_to_bytes(1))
-                    s.sendall(convert_int_to_bytes(len(data)))
-                    s.sendall(data)
+            # Send the file
+            s.sendall(convert_int_to_bytes(1))
+            with open(filename, mode="rb") as fp:
+                data = fp.read()
+                s.sendall(convert_int_to_bytes(1))
+                s.sendall(convert_int_to_bytes(len(data)))
+                s.sendall(data)
 
         # Close the connection
         s.sendall(convert_int_to_bytes(2))

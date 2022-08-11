@@ -17,7 +17,7 @@ key = rsa.generate_private_key(
 )
 
 # Write our private key to disk for safe keeping
-with open(suffix + "server_private_key.pem", "wb") as f:
+with open(suffix + "_private_key.pem", "wb") as f:
     f.write(
         key.private_bytes(
             encoding=serialization.Encoding.PEM,
@@ -48,5 +48,5 @@ csr = (
 )
 
 # Write our CSR out to disk.
-with open(suffix + "server_certificate_request.csr", "wb") as f:
+with open(suffix + "_certificate_request.csr", "wb") as f:
     f.write(csr.public_bytes(serialization.Encoding.PEM))

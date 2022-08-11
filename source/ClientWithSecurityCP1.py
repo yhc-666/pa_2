@@ -126,58 +126,59 @@ def main(args):
             print("Authentication failed, close connection")
 
         # If check is successful, the regular non-secure FTP should proceed
-        else:
-            while verified_state:
-                filename = input(
-                    "Enter a filename to send (enter -1 to exit):"
-                ).strip()
 
-                while filename != "-1" and (not pathlib.Path(filename).is_file()):
-                    filename = input("Invalid filename. Please try again:").strip()
+        while verified_state:
+            filename = input(
+                "Enter a filename to send (enter -1 to exit):"
+            ).strip()
 
-                if filename == "-1":
-                    s.sendall(convert_int_to_bytes(2))
-                    break
+            while filename != "-1" and (not pathlib.Path(filename).is_file()):
+                filename = input("Invalid filename. Please try again:").strip()
 
-                filename_bytes = bytes(filename, encoding="utf8")
+            if filename == "-1":
+                s.sendall(convert_int_to_bytes(2))
+                break
 
-                # Send the filename
-                s.sendall(convert_int_to_bytes(0))
-                s.sendall(convert_int_to_bytes(len(filename_bytes)))
-                s.sendall(filename_bytes)
+            filename_bytes = bytes(filename, encoding="utf8")
 
-                # Send the file
-                with open(filename, mode="rb") as fp:
-                    data = fp.read()
-                    # use public key to encrypt the file
-                    # use OAEP padding and cut it into 128 bytes block
-                    blocks = [data[i: i + 62] for i in range(0, len(data), 62)]
-                    s.sendall(convert_int_to_bytes(len(blocks)))
-                    encrypted_blocks = []
-                    # encrypt each block one by one
-                    for b in blocks:
-                        encrypted_block = server_public_key.encrypt(
-                            b,
-                            padding.OAEP(
-                                mgf=padding.MGF1(hashes.SHA256()),
-                                algorithm=hashes.SHA256(),
-                                label=None,
-                            ),
-                        )
-                        # send encrypted block and its size to server
-                        s.sendall(convert_int_to_bytes(len(encrypted_block)))
-                        s.sendall(encrypted_block)
-                        encrypted_blocks.append(encrypted_block)
+            # Send the filename
+            s.sendall(convert_int_to_bytes(0))
+            s.sendall(convert_int_to_bytes(len(filename_bytes)))
+            s.sendall(filename_bytes)
 
-                    #
-                    filename = "enc_" + filename.split("/")[-1]
-                    with open(
-                            f"send_files_enc/{filename}", mode="wb"
-                    ) as fp:
-                        fp.write(b''.join(encrypted_blocks))
-                    print(
-                        "Saved before sent."
+            # Send the file
+            s.sendall(convert_int_to_bytes(1))
+            with open(filename, mode="rb") as fp:
+                data = fp.read()
+                # use public key to encrypt the file
+                # use OAEP padding and cut it into 128 bytes block
+                blocks = [data[i: i + 62] for i in range(0, len(data), 62)]
+                s.sendall(convert_int_to_bytes(len(blocks)))
+                encrypted_blocks = []
+                # encrypt each block one by one
+                for b in blocks:
+                    encrypted_block = server_public_key.encrypt(
+                        b,
+                        padding.OAEP(
+                            mgf=padding.MGF1(hashes.SHA256()),
+                            algorithm=hashes.SHA256(),
+                            label=None,
+                        ),
                     )
+                    # send encrypted block and its size to server
+                    s.sendall(convert_int_to_bytes(len(encrypted_block)))
+                    s.sendall(encrypted_block)
+                    encrypted_blocks.append(encrypted_block)
+
+                #
+                filename = "enc_" + filename.split("/")[-1]
+                with open(
+                        f"send_files_enc/{filename}", mode="wb"
+                ) as fp:
+                    fp.write(b''.join(encrypted_blocks))
+                print(
+                    "Saved before sent."
+                )
 
         # Close the connection
         s.sendall(convert_int_to_bytes(2))
@@ -189,3 +190,5 @@ def main(args):
 
 if __name__ == "__main__":
     main(sys.argv[1:])
+
+
