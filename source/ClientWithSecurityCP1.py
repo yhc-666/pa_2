@@ -149,9 +149,35 @@ def main(args):
                 # Send the file
                 with open(filename, mode="rb") as fp:
                     data = fp.read()
-                    s.sendall(convert_int_to_bytes(1))
-                    s.sendall(convert_int_to_bytes(len(data)))
-                    s.sendall(data)
+                    # use public key to encrypt the file
+                    # use OAEP padding and cut it into 128 bytes block
+                    blocks = [data[i: i + 62] for i in range(0, len(data), 62)]
+                    s.sendall(convert_int_to_bytes(len(blocks)))
+                    encrypted_blocks = []
+                    # encrypt each block one by one
+                    for b in blocks:
+                        encrypted_block = server_public_key.encrypt(
+                            b,
+                            padding.OAEP(
+                                mgf=padding.MGF1(hashes.SHA256()),
+                                algorithm=hashes.SHA256(),
+                                label=None,
+                            ),
+                        )
+                        # send encrypted block and its size to server
+                        s.sendall(convert_int_to_bytes(len(encrypted_block)))
+                        s.sendall(encrypted_block)
+                        encrypted_blocks.append(encrypted_block)
+
+                    #
+                    filename = "enc_" + filename.split("/")[-1]
+                    with open(
+                            f"send_files_enc/{filename}", mode="wb"
+                    ) as fp:
+                        fp.write(b''.join(encrypted_blocks))
+                    print(
+                        "Saved before sent."
+                    )
 
         # Close the connection
         s.sendall(convert_int_to_bytes(2))
